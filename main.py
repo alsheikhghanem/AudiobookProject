@@ -1,27 +1,52 @@
-import asyncio
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import edge_tts
+import os
 
-TEXT_FILE = "book.txt"
-OUTPUT_FILE = "audiobook.mp3"
-VOICE = "ar-SA-HamedNeural"
+# Initialize FastAPI app
+app = FastAPI(title="TTS Local Server")
 
-# Playback speed percentage (e.g., "+0%" for 1.0x, "+25%" for 1.25x, "+50%" for 1.5x)
-RATE = "+50%"
+# Allow requests from our future local HTML frontend (CORS)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-async def main():
-    print(f"Reading text from: {TEXT_FILE}")
 
-    with open(TEXT_FILE, "r", encoding="utf-8") as file:
-        text = file.read()
+# Define the data structure the API expects to receive
+class TTSRequest(BaseModel):
+    text: str
+    voice: str = "ar-SA-HamedNeural"
+    rate: str = "+0%"
 
-    print("Connecting to Microsoft servers and starting conversion...")
-    print(f"Using Voice: {VOICE} | Speed Rate: {RATE}")
 
-    # The rate parameter is added here
-    communicate = edge_tts.Communicate(text, VOICE, rate=RATE)
-    await communicate.save(OUTPUT_FILE)
+@app.get("/")
+def read_root():
+    return {"status": "Server is running perfectly!"}
 
-    print(f"Conversion successful! Saved as: {OUTPUT_FILE}")
 
-if __name__ == "__main__":
-    asyncio.run(main())
+@app.post("/api/tts")
+async def generate_tts(request: TTSRequest):
+    output_file = "temp_audio.mp3"
+
+    # Remove old file if it exists to avoid conflicts
+    if os.path.exists(output_file):
+        os.remove(output_file)
+
+    print(f"Generating audio... Voice: {request.voice}, Rate: {request.rate}")
+
+    # Generate the audio file
+    communicate = edge_tts.Communicate(request.text, request.voice, rate=request.rate)
+    await communicate.save(output_file)
+
+    # Return the generated MP3 file to the frontend
+    return FileResponse(
+        output_file,
+        media_type="audio/mpeg",
+        filename="audiobook.mp3"
+    )

@@ -4,7 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="47169846-bb9b-4424-8628-727954ea991a" name="Changes" comment="Initial commit">
+    <list default="true" id="47169846-bb9b-4424-8628-727954ea991a" name="Changes" comment="feat: add playback speed control (RATE) to tts conversion">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -111,7 +112,7 @@
       <updated>1772804982353</updated>
       <workItem from="1772804983466" duration="88000" />
       <workItem from="1772805240185" duration="108000" />
-      <workItem from="1772805353110" duration="2399000" />
+      <workItem from="1772805353110" duration="4229000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />
@@ -121,7 +122,23 @@
       <option name="project" value="LOCAL" />
       <updated>1772805369798</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="feat: add basic text-to-speech conversion using edge-tts">
+      <option name="closed" value="true" />
+      <created>1772808003707</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1772808003707</updated>
+    </task>
+    <task id="LOCAL-00003" summary="feat: add playback speed control (RATE) to tts conversion">
+      <option name="closed" value="true" />
+      <created>1772808096249</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1772808096249</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -129,9 +146,11 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="Initial commit" />
+    <MESSAGE value="feat: add basic text-to-speech conversion using edge-tts" />
+    <MESSAGE value="feat: add playback speed control (RATE) to tts conversion" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: add playback speed control (RATE) to tts conversion" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/AudiobookProject$main.coverage" NAME="main Coverage Results" MODIFIED="1772807442776" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/AudiobookProject$main.coverage" NAME="main Coverage Results" MODIFIED="1772808066663" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
