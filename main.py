@@ -1,16 +1,24 @@
-# This is a sample Python script.
+import asyncio
+import edge_tts
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+TEXT_FILE = "book.txt"
+OUTPUT_FILE = "audiobook.mp3"
+VOICE = "ar-SA-HamedNeural"
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+async def main():
+    print(f"Reading text from: {TEXT_FILE}")
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    with open(TEXT_FILE, "r", encoding="utf-8") as file:
+        text = file.read()
+
+    print("Connecting to Microsoft servers and starting conversion...")
+
+    communicate = edge_tts.Communicate(text, VOICE)
+    await communicate.save(OUTPUT_FILE)
+
+    print(f"Conversion successful! Saved as: {OUTPUT_FILE}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
