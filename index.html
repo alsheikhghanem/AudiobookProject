@@ -6,9 +6,7 @@
     <title>AI Text to Speech Studio</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
 </head>
 <body class="bg-gray-100 min-h-screen p-8 font-sans">
@@ -62,21 +60,95 @@
             <div>
                 <label class="block text-sm font-bold text-gray-800 mb-2">Live Preview (Markdown Rendered)</label>
                 <div id="markdown-display" class="w-full border border-gray-200 rounded-lg p-4 bg-white prose max-w-none min-h-[250px] shadow-inner text-gray-800">
-                    </div>
+                </div>
             </div>
 
         </div>
     </div>
 
     <script>
+        // DOM Elements
         const textInput = document.getElementById('text-input');
         const markdownDisplay = document.getElementById('markdown-display');
+        const voiceSelect = document.getElementById('voice-select');
+        const rateSelect = document.getElementById('rate-select');
+        const generateBtn = document.getElementById('generate-btn');
+        const previewBtn = document.getElementById('preview-btn');
+        const audioContainer = document.getElementById('audio-container');
+        const audioPlayer = document.getElementById('audio-player');
+
+        // Local FastAPI Server URL
+        const API_URL = 'http://127.0.0.1:8000/api/tts';
 
         // Listen for typing/pasting events
         textInput.addEventListener('input', () => {
-            // Convert Markdown to HTML and inject it into the display div
             const rawText = textInput.value;
             markdownDisplay.innerHTML = marked.parse(rawText);
+        });
+
+        // Function to handle API requests and audio playback
+        async function fetchAndPlayAudio(textToSpeak, buttonElement) {
+            if (!textToSpeak.trim()) {
+                alert("Please enter some text first.");
+                return;
+            }
+
+            // Update button state during processing
+            const originalText = buttonElement.innerText;
+            buttonElement.innerText = "Processing...";
+            buttonElement.disabled = true;
+            buttonElement.classList.add("opacity-50", "cursor-not-allowed");
+
+            try {
+                // Send request to backend
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: textToSpeak,
+                        voice: voiceSelect.value,
+                        rate: rateSelect.value
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to generate audio. Is the server running?");
+                }
+
+                // Process the audio blob and play it
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+
+                audioContainer.classList.remove('hidden');
+                audioPlayer.src = audioUrl;
+                audioPlayer.play();
+
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Error connecting to the server. Make sure FastAPI is running (uvicorn main:app --reload).");
+            } finally {
+                // Restore button state
+                buttonElement.innerText = originalText;
+                buttonElement.disabled = false;
+                buttonElement.classList.remove("opacity-50", "cursor-not-allowed");
+            }
+        }
+
+        // Event listener for generating full text
+        generateBtn.addEventListener('click', () => {
+            fetchAndPlayAudio(textInput.value, generateBtn);
+        });
+
+        // Event listener for testing the voice with dynamic language text
+        previewBtn.addEventListener('click', () => {
+            const isArabic = voiceSelect.value.includes('ar-');
+            const previewText = isArabic
+                ? "مرحباً، أنا أختبر نبرة هذا الصوت الآن."
+                : "Hello, I am testing the tone of this voice right now.";
+
+            fetchAndPlayAudio(previewText, previewBtn);
         });
     </script>
 </body>
