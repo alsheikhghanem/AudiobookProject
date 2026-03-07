@@ -21,8 +21,12 @@ class TTSService:
 
     @staticmethod
     async def generate_audio_and_boundaries(text: str, voice: str, rate: str):
+        clean_text = text.strip()
+        if not clean_text:
+            return {"audio": "", "boundaries": []}
+
         try:
-            communicate = edge_tts.Communicate(text.strip(), voice, rate=rate)
+            communicate = edge_tts.Communicate(clean_text, voice, rate=rate)
             audio_data = bytearray()
             word_boundaries = []
 
@@ -45,4 +49,6 @@ class TTSService:
             }
 
         except Exception as e:
+            if "No audio was received" in str(e):
+                return {"audio": "", "boundaries": []}
             raise e

@@ -4,10 +4,6 @@ export class TextProcessor {
         this.chunks = [];
     }
 
-    isArabicText(text) {
-        return /[\u0600-\u06FF]/.test(text);
-    }
-
     sanitizeInput(text) {
         return text.replace(/`\{\{\s*(.*?)\s*(?:\||::)\s*(.*?)\s*}}`/g, '{{$1::$2}}');
     }
@@ -29,15 +25,15 @@ export class TextProcessor {
         htmlContent = htmlContent.replace(/@@DUAL_\d+@@/g, function (match) {
             let data = dictionary[match];
             if (data) {
-                return `<span class="dual-word text-blue-800 bg-blue-50 px-1 border border-blue-200 rounded font-bold transition-all duration-75 ease-in-out inline-block" data-phonetic="${data.phonetic}">${data.visual}</span>`;
+                return `<span class="dual-word font-bold transition-all duration-75 ease-in-out inline-block" data-phonetic="${data.phonetic}">${data.visual}</span>`;
             }
             return match;
         });
 
         displayElement.innerHTML = htmlContent;
-        const isRTL = this.isArabicText(sanitizedText);
-        displayElement.setAttribute("dir", isRTL ? "rtl" : "ltr");
-        displayElement.className = `w-full border border-gray-200 rounded-lg p-6 bg-white prose max-w-none min-h-[250px] max-h-[500px] overflow-y-auto shadow-inner text-gray-800 leading-relaxed transition-all scroll-smooth relative ${isRTL ? 'text-right' : 'text-left'}`;
+
+        const blockElements = displayElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote');
+        blockElements.forEach(el => el.setAttribute('dir', 'auto'));
     }
 
     buildMemoryMapAndDOM(displayElement) {
@@ -88,7 +84,7 @@ export class TextProcessor {
                         const spanId = `md-word-${this.wordElementsCount++}`;
                         const span = document.createElement('span');
                         span.id = spanId;
-                        span.className = "transition-all duration-75 ease-in-out px-1 rounded inline-block text-gray-800";
+                        span.className = "transition-all duration-75 ease-in-out rounded inline-block relative";
                         span.setAttribute('data-original-class', span.className);
                         span.textContent = word;
                         fragment.appendChild(span);
@@ -112,6 +108,6 @@ export class TextProcessor {
         Array.from(displayElement.childNodes).forEach(walk);
         flushChunk();
 
-        return this.chunks.filter(c => c.text.length > 0);
+        return this.chunks.filter(c => c.text.trim().length > 0 && /[a-zA-Z\u0600-\u06FF0-9]/.test(c.text));
     }
 }
