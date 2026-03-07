@@ -141,7 +141,6 @@
             return /[\u0600-\u06FF]/.test(text);
         }
 
-        // التحديث الذكي: يتعرف على | أو :: وينظف الشوائب
         function sanitizeInput(text) {
             return text.replace(/`\{\{\s*(.*?)\s*(?:\||::)\s*(.*?)\s*\}\}`/g, '{{$1::$2}}');
         }
@@ -153,7 +152,6 @@
             let dictionary = {};
             let counter = 0;
 
-            // التحديث الذكي: يقبل | (للنصوص القديمة) ويقبل :: (للنصوص الجديدة)
             let preProcessedText = sanitizedText.replace(/\{\{\s*(.*?)\s*(?:\||::)\s*(.*?)\s*\}\}/g, function(match, visual, phonetic) {
                 let token = '@@DUAL_' + counter++ + '@@';
                 dictionary[token] = { visual: visual.trim(), phonetic: phonetic.trim() };
@@ -427,7 +425,11 @@
         });
 
         previewBtn.addEventListener('click', () => {
-            const previewText = "Hello, this is a live test to verify the audio system and check the highlighted words successfully.";
+            const isArabic = voiceSelect.value.includes('ar-');
+            const previewText = isArabic
+                ? "مرحباً، هذا اختبار حي للتحقق من النظام الصوتي والتأكد من تظليل الكلمات بنجاح."
+                : "Hello, this is a live test to verify the audio system and check the highlighted words successfully.";
+
             textInput.value = previewText;
             textInput.dispatchEvent(new Event('input'));
             fetchAndPlayAudio(previewBtn);

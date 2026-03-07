@@ -14,7 +14,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Removed default values to ensure frontend sends them
 class TTSRequest(BaseModel):
     text: str
     voice: str
@@ -24,7 +23,6 @@ class TTSRequest(BaseModel):
 def read_root():
     return {"status": "Server is running perfectly!"}
 
-# NEW: Endpoint to fetch all Arabic and English voices dynamically
 @app.get("/api/voices")
 async def get_voices():
     voices = await edge_tts.list_voices()
