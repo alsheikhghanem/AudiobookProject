@@ -14,14 +14,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class TTSRequest(BaseModel):
     text: str
     voice: str
     rate: str
 
+
 @app.get("/")
 def read_root():
     return {"status": "Server is running perfectly!"}
+
 
 @app.get("/api/voices")
 async def get_voices():
@@ -31,6 +34,7 @@ async def get_voices():
         for v in voices if v["Locale"].startswith("ar-") or v["Locale"].startswith("en-")
     ]
     return {"voices": filtered_voices}
+
 
 @app.post("/api/tts")
 async def generate_tts(request: TTSRequest):
