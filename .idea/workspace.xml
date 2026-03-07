@@ -4,16 +4,23 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="47169846-bb9b-4424-8628-727954ea991a" name="Changes" comment="Streaming &amp; Queueing">
-      <change beforePath="$PROJECT_DIR$/.idea/AudiobookProject.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/AudiobookProject.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/jsLibraryMappings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/jsLibraryMappings.xml" afterDir="false" />
+    <list default="true" id="47169846-bb9b-4424-8628-727954ea991a" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/test_api.http" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/architecture.txt" beforeDir="false" afterPath="$PROJECT_DIR$/architecture.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/logger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/routers.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/routers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/schemas.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/services.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/css/style.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/js/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/js/api.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/js/audioEngine.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/js/audioEngine.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/js/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/js/main.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/js/textProcessor.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/js/textProcessor.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_project.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_project.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,6 +49,9 @@
     &quot;accountId&quot;: &quot;082aec4e-3746-4e62-abd2-ad25c6a4769f&quot;
   }
 }</component>
+  <component name="HttpClientOnboardingState"><![CDATA[{
+  "isOnboardingCommentShown": true
+}]]></component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
@@ -56,6 +66,9 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "HTTP Request.test_api | Generate TTS - Empty Text.executor": "Run",
+    "HTTP Request.test_api | Generate TTS - Invalid Voice.executor": "Run",
+    "HTTP Request.test_api | Generate TTS - Normal Request.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "Python.main.executor": "Run",
     "RunOnceActivity.MCP Project settings loaded": "true",
@@ -78,7 +91,31 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager">
+  <component name="RunDashboard">
+    <option name="configurationStatuses">
+      <map>
+        <entry key="HttpClient.HttpRequestRunConfigurationType">
+          <value>
+            <map>
+              <entry key="test_api | Generate TTS - Empty Text" value="STOPPED" />
+              <entry key="test_api | Generate TTS - Invalid Voice" value="STOPPED" />
+              <entry key="test_api | Generate TTS - Normal Request" value="STOPPED" />
+            </map>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.main">
+    <configuration name="test_api | Generate TTS - Empty Text" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" temporary="true" nameIsGenerated="true" path="$PROJECT_DIR$/test_api.http" executionIdentifier="Generate TTS - Empty Text" index="2" runType="Run single request">
+      <method v="2" />
+    </configuration>
+    <configuration name="test_api | Generate TTS - Invalid Voice" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" temporary="true" nameIsGenerated="true" path="$PROJECT_DIR$/test_api.http" executionIdentifier="Generate TTS - Invalid Voice" index="3" runType="Run single request">
+      <method v="2" />
+    </configuration>
+    <configuration name="test_api | Generate TTS - Normal Request" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" temporary="true" nameIsGenerated="true" path="$PROJECT_DIR$/test_api.http" executionIdentifier="Generate TTS - Normal Request" runType="Run single request">
+      <method v="2" />
+    </configuration>
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="AudiobookProject" />
       <option name="ENV_FILES" value="" />
@@ -105,6 +142,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="HTTP Request.test_api | Generate TTS - Normal Request" />
+        <item itemvalue="HTTP Request.test_api | Generate TTS - Invalid Voice" />
+        <item itemvalue="HTTP Request.test_api | Generate TTS - Empty Text" />
         <item itemvalue="Python.main" />
       </list>
     </recent_temporary>
@@ -126,7 +166,8 @@
       <updated>1772804982353</updated>
       <workItem from="1772804983466" duration="88000" />
       <workItem from="1772805240185" duration="108000" />
-      <workItem from="1772805353110" duration="43942000" />
+      <workItem from="1772805353110" duration="44683000" />
+      <workItem from="1772899579683" duration="16162000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />
@@ -240,7 +281,15 @@
       <option name="project" value="LOCAL" />
       <updated>1772854014083</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="update">
+      <option name="closed" value="true" />
+      <created>1772867399897</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1772867399897</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -261,7 +310,8 @@
     <MESSAGE value="chore: resolve 'marked' unresolved variable IDE warning using JSDoc type definitions" />
     <MESSAGE value="Clean Architecture &amp; Logging System" />
     <MESSAGE value="Streaming &amp; Queueing" />
-    <option name="LAST_COMMIT_MESSAGE" value="Streaming &amp; Queueing" />
+    <MESSAGE value="update" />
+    <option name="LAST_COMMIT_MESSAGE" value="update" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/AudiobookProject$main.coverage" NAME="main Coverage Results" MODIFIED="1772808066663" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />

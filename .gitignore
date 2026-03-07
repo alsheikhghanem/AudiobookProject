@@ -1,0 +1,27 @@
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# IDEs (like PyCharm or WebStorm)
+.idea/httpRequests/
+# Note: Developers usually ignore the entire .idea folder by adding:
+# .idea/
+
+# Reports and Logs (Requested files)
+report.txt
+frontend_report.txt
+backend/report.txt
+
+# Python Cache (Temporary Python files)
+__pycache__/
+*.pyc
+*.pyo
+
+# Application Cache (Temporary audio folders created in the project)
+backend/cache/
+cache/
+
+# OS generated files
+.DS_Store
+Thumbs.db

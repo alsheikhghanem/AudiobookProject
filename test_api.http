@@ -1,0 +1,29 @@
+### Generate TTS - Normal Request
+POST http://127.0.0.1:8000/api/tts
+Content-Type: application/json
+
+{
+  "text": "مرحباً بك في عالم البرمجة المتقدمة.",
+  "voice": "ar-SA-HamedNeural",
+  "rate": "+0%"
+}
+
+### Generate TTS - Empty Text
+POST http://127.0.0.1:8000/api/tts
+Content-Type: application/json
+
+{
+  "text": "   \n  ",
+  "voice": "ar-SA-HamedNeural",
+  "rate": "+0%"
+}
+
+### Generate TTS - Invalid Voice
+POST http://127.0.0.1:8000/api/tts
+Content-Type: application/json
+
+{
+  "text": "تجربة",
+  "voice": "invalid-voice-name",
+  "rate": "+0%"
+}

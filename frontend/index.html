@@ -4,81 +4,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Text Studio</title>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+        });
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=101">
+    <style>
+        body {
+            transition: background-color 0.5s ease;
+        }
+
+        #bottom-player {
+            transition: opacity 0.4s ease;
+        }
+
+        span[id^="md-word-"] {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: inline-block;
+        }
+
+        /* noinspection CssUnusedSymbol */
+        body.focus-mode {
+            background-color: #030305 !important;
+        }
+
+        /* noinspection CssUnusedSymbol */
+        body.focus-mode #bottom-player {
+            opacity: 0.1 !important;
+        }
+
+        /* noinspection CssUnusedSymbol */
+        body.focus-mode #bottom-player:hover,
+        /* noinspection CssUnusedSymbol */
+        body.focus-mode #bottom-player.active-hover {
+            opacity: 1 !important;
+        }
+
+        /* noinspection CssUnusedSymbol */
+        body.focus-mode #markdown-display span[id^="md-word-"]:not(.word-glow) {
+            opacity: 0.15 !important;
+            filter: blur(2px) !important;
+        }
+
+        /* noinspection CssUnusedSymbol */
+        body.focus-mode #markdown-display .word-glow {
+            opacity: 1 !important;
+            filter: blur(0) !important;
+            transform: scale(1.15) translateY(-3px) !important;
+        }
+    </style>
 </head>
 <body class="antialiased overflow-hidden">
 
-    <aside id="panel-input" class="fixed top-12 left-6 floating-panel p-5 w-96 h-[calc(100vh-12rem)] z-40 flex flex-col hidden-panel rounded-3xl">
-        <div class="panel-label flex justify-between">
-            <span>Editor</span>
-            <button id="btn-close-input" aria-label="Close Editor"><i data-lucide="x" class="w-4 h-4"></i></button>
-        </div>
-        <textarea id="text-input" dir="auto" aria-label="Main text input" class="w-full h-full bg-transparent text-[#f4f3ee] outline-none resize-none font-medium leading-relaxed scrollbar-hide" placeholder="Write something..."></textarea>
-    </aside>
+<aside id="panel-input"
+       class="fixed top-12 left-4 md:left-6 floating-panel p-5 w-[90vw] md:w-96 h-[calc(100vh-12rem)] z-40 flex flex-col hidden-panel rounded-3xl">
+    <div class="panel-label flex justify-between">
+        <span>Editor</span>
+        <button id="btn-close-input" aria-label="Close Editor"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <textarea id="text-input" dir="auto" aria-label="Main text input"
+              class="w-full h-full bg-transparent text-[#f4f3ee] outline-none resize-none font-medium leading-relaxed scrollbar-hide"
+              placeholder="Write something..."></textarea>
+</aside>
 
-    <main class="w-full h-screen pt-12 pb-44 px-12 md:px-32 overflow-y-auto scroll-smooth">
-        <div id="markdown-display" class="prose max-w-4xl mx-auto text-xl md:text-2xl leading-relaxed text-[#f4f3ee]"></div>
-    </main>
+<main class="w-full h-screen pt-12 pb-44 px-12 md:px-32 overflow-y-auto scroll-smooth">
+    <div id="markdown-display" class="prose max-w-4xl mx-auto text-xl md:text-2xl leading-relaxed text-[#f4f3ee]"></div>
+</main>
 
-    <footer id="bottom-player" class="fixed left-1/2 transform -translate-x-1/2 z-50 flex items-center justify-between gap-8">
+<footer id="bottom-player"
+        class="fixed left-1/2 transform -translate-x-1/2 z-50 flex items-center justify-between gap-8 pt-2">
 
-        <div class="flex items-center gap-5">
-            <button id="btn-toggle-input" data-tooltip="Editor" aria-label="Open Editor" class="text-[#b1ada1] hover:text-[#c15f3c] transition-all">
-                <i data-lucide="layout-template" class="w-5 h-5"></i>
-            </button>
+    <canvas id="audio-visualizer"
+            class="absolute top-0 left-0 w-full h-full pointer-events-none rounded-[20px] opacity-40"></canvas>
 
-            <div class="relative">
-                <button id="btn-toggle-voice" data-tooltip="Voices" aria-label="Select Voice" class="text-[#b1ada1] hover:text-[#c15f3c] transition-all">
-                    <i data-lucide="users" class="w-5 h-5"></i>
-                </button>
-                <div id="panel-voice" class="absolute bottom-16 left-0 floating-panel p-5 w-72 hidden-panel rounded-2xl">
-                    <div class="panel-label">Select Narrator</div>
-                    <select id="voice-select" aria-label="Choose voice" class="w-full outline-none cursor-pointer"></select>
-                </div>
-            </div>
-        </div>
+    <div id="progress-container"
+         class="absolute top-0 left-0 w-full h-[6px] bg-[rgba(255,255,255,0.05)] cursor-pointer group overflow-hidden rounded-t-xl z-20">
+        <div id="progress-bar" class="h-full bg-[#c15f3c] w-0 transition-all duration-75"></div>
+    </div>
 
-        <button id="btn-main-play" aria-label="Play or Pause" class="w-14 h-14 rounded-full bg-[#c15f3c] text-white flex items-center justify-center shadow-2xl transition-all outline-none opacity-40 cursor-not-allowed">
-            <span id="wrapper-play"><i data-lucide="play" class="w-6 h-6 ml-1"></i></span>
-            <span id="wrapper-pause" class="hidden"><i data-lucide="pause" class="w-6 h-6"></i></span>
-            <span id="wrapper-loading" class="hidden"><i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i></span>
+    <div class="flex items-center gap-5 z-20">
+        <button id="btn-toggle-input" data-tooltip="Editor" aria-label="Open Editor"
+                class="text-[#b1ada1] hover:text-[#c15f3c] transition-all">
+            <i data-lucide="layout-template" class="w-5 h-5"></i>
         </button>
 
-        <div class="flex items-center gap-5">
-            <div class="relative">
-                <button id="btn-toggle-speed" data-tooltip="Speed" aria-label="Select playback speed" class="text-[#b1ada1] hover:text-[#c15f3c] transition-all flex items-center gap-1">
-                    <i data-lucide="zap" class="w-5 h-5"></i>
-                    <span id="speed-label" class="text-[10px] font-black uppercase">1.0x</span>
-                </button>
-                <div id="panel-speed" class="absolute bottom-16 right-0 floating-panel p-5 w-48 hidden-panel rounded-2xl">
-                    <div class="panel-label">Playback Speed</div>
-                    <select id="rate-select" aria-label="Choose speed" class="w-full outline-none cursor-pointer">
-                        <option value="-50%">0.5x</option>
-                        <option value="+0%" selected>1.0x</option>
-                        <option value="+50%">1.5x</option>
-                        <option value="+100%">2.0x</option>
-                    </select>
-                </div>
-            </div>
-
-            <button id="preview-btn" data-tooltip="Magic Fill" aria-label="Auto preview" class="text-[#b1ada1] hover:text-[#c15f3c] transition-all">
-                <i data-lucide="sparkles" class="w-5 h-5"></i>
+        <div class="relative">
+            <button id="btn-toggle-voice" data-tooltip="Voices" aria-label="Select Voice"
+                    class="text-[#b1ada1] hover:text-[#c15f3c] transition-all">
+                <i data-lucide="users" class="w-5 h-5"></i>
             </button>
+            <div id="panel-voice" class="absolute bottom-16 left-0 floating-panel p-5 w-72 hidden-panel rounded-2xl">
+                <div class="panel-label">Select Narrator</div>
+                <select id="voice-select" aria-label="Choose voice" class="w-full outline-none cursor-pointer"></select>
+            </div>
+        </div>
+    </div>
+
+    <button id="btn-main-play" aria-label="Play or Pause"
+            class="w-14 h-14 rounded-full bg-[#c15f3c] text-white flex items-center justify-center shadow-2xl transition-all outline-none opacity-40 cursor-not-allowed z-20 -mt-2">
+        <span id="wrapper-play"><i data-lucide="play" class="w-6 h-6 ml-1"></i></span>
+        <span id="wrapper-pause" class="hidden"><i data-lucide="pause" class="w-6 h-6"></i></span>
+        <span id="wrapper-loading" class="hidden"><i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i></span>
+    </button>
+
+    <div class="flex items-center gap-5 z-20">
+        <div class="relative">
+            <button id="btn-toggle-speed" data-tooltip="Speed" aria-label="Select playback speed"
+                    class="text-[#b1ada1] hover:text-[#c15f3c] transition-all flex items-center gap-1">
+                <i data-lucide="zap" class="w-5 h-5"></i>
+                <span id="speed-label" class="text-[10px] font-black uppercase">1.0x</span>
+            </button>
+            <div id="panel-speed" class="absolute bottom-16 right-0 floating-panel p-5 w-48 hidden-panel rounded-2xl">
+                <div class="panel-label">Playback Speed</div>
+                <select id="rate-select" aria-label="Choose speed" class="w-full outline-none cursor-pointer">
+                    <option value="-50%">0.5x</option>
+                    <option value="+0%" selected>1.0x</option>
+                    <option value="+50%">1.5x</option>
+                    <option value="+100%">2.0x</option>
+                </select>
+            </div>
         </div>
 
-    </footer>
+        <button id="btn-focus-mode" data-tooltip="Focus Mode" aria-label="Cinematic Focus"
+                class="text-[#b1ada1] hover:text-[#c15f3c] transition-all">
+            <i data-lucide="scan-eye" class="w-5 h-5"></i>
+        </button>
+        <button id="preview-btn" data-tooltip="Magic Fill" aria-label="Auto preview"
+                class="text-[#b1ada1] hover:text-[#c15f3c] transition-all">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+        </button>
+    </div>
 
-    <audio id="audio-player" class="hidden"></audio>
-    <script>
-        window.addEventListener('load', function() {
-            if (window['lucide']) {
-                window['lucide']['createIcons']();
-            }
-        });
-    </script>
-    <script type="module" src="js/main.js"></script>
+</footer>
+
+<audio id="audio-player" class="hidden" crossorigin="anonymous"></audio>
+<script>
+    window.addEventListener('load', function () {
+        if (window['lucide']) {
+            window['lucide']['createIcons']();
+        }
+    });
+</script>
+<script type="module" src="js/main.js?v=101"></script>
 </body>
 </html>

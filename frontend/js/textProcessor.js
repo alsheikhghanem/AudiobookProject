@@ -39,13 +39,13 @@ export class TextProcessor {
     buildMemoryMapAndDOM(displayElement) {
         this.wordElementsCount = 0;
         this.chunks = [];
-        let currentChunk = { words: [], spanIds: [], text: "" };
+        let currentChunk = {words: [], spanIds: [], text: ""};
 
         const flushChunk = () => {
             if (currentChunk.words.length > 0) {
                 currentChunk.text = currentChunk.words.join(" ").replace(/\s+/g, ' ').trim();
                 this.chunks.push(currentChunk);
-                currentChunk = { words: [], spanIds: [], text: "" };
+                currentChunk = {words: [], spanIds: [], text: ""};
             }
         };
 
@@ -62,14 +62,12 @@ export class TextProcessor {
                 const phoneticText = node.getAttribute('data-phonetic');
                 const phoneticWords = phoneticText.split(/\s+/).filter(w => w.trim().length > 0);
 
-                let hasPunctuation = false;
                 phoneticWords.forEach(pw => {
                     currentChunk.words.push(pw);
                     currentChunk.spanIds.push(spanId);
-                    if (/[.,!?؛،:\n\r]/.test(pw)) hasPunctuation = true;
+                    const isSentenceEnd = /[.!?؟\n\r]/.test(pw);
+                    if (isSentenceEnd || currentChunk.words.length >= 40) flushChunk();
                 });
-
-                if (hasPunctuation || currentChunk.words.length >= 15) flushChunk();
                 return;
             }
 
@@ -92,7 +90,8 @@ export class TextProcessor {
                         currentChunk.words.push(word.trim());
                         currentChunk.spanIds.push(spanId);
 
-                        if (/[.,!?؛،:\n\r]/.test(word) || currentChunk.words.length >= 15) {
+                        const isSentenceEnd = /[.!?؟\n\r]/.test(word);
+                        if (isSentenceEnd || currentChunk.words.length >= 40) {
                             flushChunk();
                         }
                     } else {
@@ -108,6 +107,7 @@ export class TextProcessor {
         Array.from(displayElement.childNodes).forEach(walk);
         flushChunk();
 
-        return this.chunks.filter(c => c.text.trim().length > 0 && /[a-zA-Z\u0600-\u06FF0-9]/.test(c.text));
+        const finalChunks = this.chunks.filter(c => c.text.trim().length > 0 && /[a-zA-Z\u0600-\u06FF0-9]/.test(c.text));
+        return finalChunks;
     }
 }

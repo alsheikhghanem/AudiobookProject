@@ -1,6 +1,9 @@
-import { ApiService } from './api.js';
-import { TextProcessor } from './textProcessor.js';
-import { AudioEngine } from './audioEngine.js';
+window.downloadReportTxt = () => {
+};
+
+import {ApiService} from './api.js';
+import {TextProcessor} from './textProcessor.js';
+import {AudioEngine} from './audioEngine.js';
 
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
 const elements = {
@@ -17,30 +20,59 @@ const elements = {
     btnToggleSpeed: document.getElementById('btn-toggle-speed'),
     panelSpeed: document.getElementById('panel-speed'),
     speedLabel: document.getElementById('speed-label'),
+    btnFocusMode: document.getElementById('btn-focus-mode'),
     previewBtn: document.getElementById('preview-btn'),
     bottomPlayer: document.getElementById('bottom-player'),
     btnMainPlay: document.getElementById('btn-main-play'),
-
     wrapperPlay: document.getElementById('wrapper-play'),
     wrapperPause: document.getElementById('wrapper-pause'),
-    wrapperLoading: document.getElementById('wrapper-loading')
+    wrapperLoading: document.getElementById('wrapper-loading'),
+    progressContainer: document.getElementById('progress-container'),
+    progressBar: document.getElementById('progress-bar'),
+    visualizerCanvas: document.getElementById('audio-visualizer')
 };
 
 const api = new ApiService(API_BASE_URL);
 const textProcessor = new TextProcessor();
 const audioEngine = new AudioEngine(elements.audioPlayer, api);
 let currentChunks = [];
+let progressTrackerId = null;
+
+audioEngine.setupVisualizer(elements.visualizerCanvas);
+
+function resizeCanvas() {
+    elements.visualizerCanvas.width = elements.bottomPlayer.clientWidth;
+    elements.visualizerCanvas.height = elements.bottomPlayer.clientHeight;
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
 const cursorDot = document.createElement('div');
 const cursorTrail = document.createElement('div');
-cursorDot.className = 'cursor-dot'; cursorTrail.className = 'cursor-trail';
-document.body.append(cursorDot, cursorTrail);
-let mX = 0, mY = 0, tX = 0, tY = 0;
-document.addEventListener('mousemove', e => { mX = e.clientX; mY = e.clientY; cursorDot.style.left = `${mX}px`; cursorDot.style.top = `${mY}px`; });
-(function anim() { tX += (mX - tX) * 0.15; tY += (mY - tY) * 0.15; cursorTrail.style.left = `${tX}px`; cursorTrail.style.top = `${tY}px`; requestAnimationFrame(anim); })();
+cursorDot.className = 'cursor-dot';
+cursorTrail.className = 'cursor-trail';
+
+if (window.matchMedia("(pointer: fine)").matches) {
+    document.body.append(cursorDot, cursorTrail);
+    let mX = 0, mY = 0, tX = 0, tY = 0;
+    document.addEventListener('mousemove', e => {
+        mX = e.clientX;
+        mY = e.clientY;
+        cursorDot.style.left = `${mX}px`;
+        cursorDot.style.top = `${mY}px`;
+    });
+    (function anim() {
+        tX += (mX - tX) * 0.15;
+        tY += (mY - tY) * 0.15;
+        cursorTrail.style.left = `${tX}px`;
+        cursorTrail.style.top = `${tY}px`;
+        requestAnimationFrame(anim);
+    })();
+}
 
 function updateCursorInteractions() {
-    document.querySelectorAll('button, select, span[id^="md-word-"], textarea').forEach(el => {
+    document.querySelectorAll('button, select, span[id^="md-word-"], textarea, #progress-container').forEach(el => {
         el.onmouseenter = () => document.body.classList.add('hover-active');
         el.onmouseleave = () => document.body.classList.remove('hover-active');
     });
@@ -48,21 +80,84 @@ function updateCursorInteractions() {
 
 function togglePanel(panel) {
     const isHidden = panel.classList.contains('hidden-panel');
-    document.querySelectorAll('.floating-panel, aside').forEach(p => { if (p !== panel) { p.classList.add('hidden-panel'); p.style.opacity = '0'; } });
-    if (isHidden) { panel.classList.remove('hidden-panel'); setTimeout(() => { panel.style.opacity = '1'; panel.style.transform = 'scale(1) translateY(0)'; }, 10); }
-    else { panel.style.opacity = '0'; panel.style.transform = 'scale(0.8) translateY(20px)'; setTimeout(() => panel.classList.add('hidden-panel'), 300); }
+    document.querySelectorAll('.floating-panel, aside').forEach(p => {
+        if (p !== panel) {
+            p.classList.add('hidden-panel');
+            p.style.opacity = '0';
+        }
+    });
+    if (isHidden) {
+        panel.classList.remove('hidden-panel');
+        setTimeout(() => {
+            panel.style.opacity = '1';
+            panel.style.transform = 'scale(1) translateY(0)';
+        }, 10);
+    } else {
+        panel.style.opacity = '0';
+        panel.style.transform = 'scale(0.8) translateY(20px)';
+        setTimeout(() => panel.classList.add('hidden-panel'), 300);
+    }
 }
+
+function saveSession() {
+    localStorage.setItem('tts_text', elements.textInput.value);
+    localStorage.setItem('tts_voice', elements.voiceSelect.value);
+    localStorage.setItem('tts_rate', elements.rateSelect.value);
+}
+
+function loadSession() {
+    const savedText = localStorage.getItem('tts_text');
+    const savedVoice = localStorage.getItem('tts_voice');
+    const savedRate = localStorage.getItem('tts_rate');
+
+    if (savedText) elements.textInput.value = savedText;
+    if (savedVoice && [...elements.voiceSelect.options].some(o => o.value === savedVoice)) {
+        elements.voiceSelect.value = savedVoice;
+    }
+    if (savedRate && [...elements.rateSelect.options].some(o => o.value === savedRate)) {
+        elements.rateSelect.value = savedRate;
+        elements.speedLabel.textContent = elements.rateSelect.options[elements.rateSelect.selectedIndex].text.split(' ')[0];
+    }
+}
+
+function trackProgress() {
+    const percent = audioEngine.getGlobalProgress() * 100;
+    elements.progressBar.style.width = `${percent}%`;
+    if (audioEngine.isPlaying) {
+        progressTrackerId = requestAnimationFrame(trackProgress);
+    }
+}
+
+elements.progressContainer.onclick = async (e) => {
+    if (currentChunks.length === 0) return;
+    const rect = elements.progressContainer.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    await audioEngine.seekToPercentage(percent);
+    trackProgress();
+};
 
 elements.btnToggleInput.onclick = () => togglePanel(elements.panelInput);
 elements.btnCloseInput.onclick = () => togglePanel(elements.panelInput);
 elements.btnToggleVoice.onclick = () => togglePanel(elements.panelVoice);
 elements.btnToggleSpeed.onclick = () => togglePanel(elements.panelSpeed);
 
+elements.btnFocusMode.onclick = () => {
+    document.body.classList.toggle('focus-mode');
+    if (document.body.classList.contains('focus-mode')) {
+        elements.btnFocusMode.classList.add('text-[#c15f3c]');
+        elements.panelInput.classList.add('hidden-panel');
+    } else {
+        elements.btnFocusMode.classList.remove('text-[#c15f3c]');
+    }
+};
+
 audioEngine.onPlaybackStart = () => {
     elements.wrapperPlay.classList.add('hidden');
     elements.wrapperPause.classList.add('hidden');
     elements.wrapperLoading.classList.remove('hidden');
     elements.bottomPlayer.classList.add('playing-pulse');
+    if (progressTrackerId) cancelAnimationFrame(progressTrackerId);
+    trackProgress();
 };
 
 audioEngine.onPlaybackEnd = () => {
@@ -71,6 +166,8 @@ audioEngine.onPlaybackEnd = () => {
     elements.wrapperLoading.classList.add('hidden');
     elements.wrapperPause.classList.add('hidden');
     elements.wrapperPlay.classList.remove('hidden');
+    elements.progressBar.style.width = `0%`;
+    if (progressTrackerId) cancelAnimationFrame(progressTrackerId);
 };
 
 elements.audioPlayer.addEventListener('play', () => {
@@ -97,6 +194,7 @@ function updatePreviewAndChunks() {
     textProcessor.renderLivePreview(elements.textInput.value, elements.markdownDisplay);
     currentChunks = textProcessor.buildMemoryMapAndDOM(elements.markdownDisplay);
     updateCursorInteractions();
+    saveSession();
 }
 
 async function processAndPlay(spanId = null) {
@@ -111,7 +209,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await api.getVoices();
         const voices = data['voices'] || [];
         elements.voiceSelect.innerHTML = voices.map(v => `<option value="${v['name']}">${v['name']} (${v['gender']})</option>`).join('');
-        updatePreviewAndChunks(); checkInputState();
+        loadSession();
+        updatePreviewAndChunks();
+        checkInputState();
     } catch (e) {
         elements.voiceSelect.innerHTML = '<option>Error loading voices</option>';
     }
@@ -124,6 +224,7 @@ elements.textInput.oninput = () => {
 };
 
 elements.voiceSelect.onchange = async () => {
+    saveSession();
     const sid = audioEngine.currentActiveSpanId;
     audioEngine.hardReset();
     if (sid) await processAndPlay(sid);
@@ -131,6 +232,7 @@ elements.voiceSelect.onchange = async () => {
 };
 
 elements.rateSelect.onchange = async () => {
+    saveSession();
     audioEngine.rate = elements.rateSelect.value;
     elements.speedLabel.textContent = elements.rateSelect.options[elements.rateSelect.selectedIndex].text.split(' ')[0];
     const sid = audioEngine.currentActiveSpanId;
@@ -150,6 +252,7 @@ elements.btnMainPlay.onclick = async () => {
             audioEngine.isPlaying = true;
             if (elements.audioPlayer.getAttribute('src')) {
                 elements.audioPlayer.play();
+                trackProgress();
             } else {
                 if (audioEngine.onPlaybackStart) audioEngine.onPlaybackStart();
                 audioEngine.playNextChunk();
@@ -172,5 +275,7 @@ elements.previewBtn.onclick = async () => {
     elements.textInput.value = elements.voiceSelect.value.includes('ar-')
         ? "# تجربة حية\nمرحباً بك في {{Studio::سْتُودْيُو}} الذكاء الاصطناعي."
         : "# Live Preview\nWelcome to the AI {{Studio::Studio}}.";
-    updatePreviewAndChunks(); checkInputState(); await processAndPlay();
+    updatePreviewAndChunks();
+    checkInputState();
+    await processAndPlay();
 };
