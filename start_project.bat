@@ -1,6 +1,6 @@
 @echo off
 echo ==========================================
-echo Starting AI Text Studio...
+echo Starting LexiCast...
 echo ==========================================
 
 :: Activate the virtual environment

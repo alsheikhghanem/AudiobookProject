@@ -9,7 +9,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="TTS Local Server", lifespan=lifespan)
+app = FastAPI(title="LexiCast", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
