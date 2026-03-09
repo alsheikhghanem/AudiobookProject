@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/AudiobookProject.iml" filepath="$PROJECT_DIR$/.idea/AudiobookProject.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/LexiCast.iml" filepath="$PROJECT_DIR$/.idea/LexiCast.iml" />
     </modules>
   </component>
 </project>
