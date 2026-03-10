@@ -1,7 +1,5 @@
 export class AudioEngine {
-    constructor(audioPlayerElement, apiService) {
-        this.player = audioPlayerElement;
-        this.player.crossOrigin = "anonymous";
+    constructor(apiService) {
         this.api = apiService;
         this.queue = [];
         this.currentIndex = 0;
@@ -12,18 +10,36 @@ export class AudioEngine {
         this.voice = "";
         this.rate = "";
         this.targetSpanToSeek = null;
+
         this.onPlaybackStart = null;
         this.onPlaybackEnd = null;
-        this.currentBlobUrl = null;
-        this.isUserScrolling = false;
-        this.scrollTimeout = null;
+        this.onPlayStateChange = null;
 
         this.db = null;
         this.initDB();
 
         this.canvas = null;
         this.canvasCtx = null;
-        this.audioCtx = null;
+
+        const AudioContextClass = window.AudioContext || window['webkitAudioContext'];
+        this.audioCtx = new AudioContextClass();
+        this.masterGain = this.audioCtx.createGain();
+        this.analyser = this.audioCtx.createAnalyser();
+
+        this.masterGain.connect(this.analyser);
+        this.analyser.connect(this.audioCtx.destination);
+        this.analyser.fftSize = 128;
+        this.bufferLength = this.analyser.frequencyBinCount;
+        this.dataArray = new Uint8Array(this.bufferLength);
+
+        this.currentSource = null;
+        this.playbackStartTime = 0;
+        this.pauseOffset = 0;
+        this.currentBufferDuration = 0;
+        this.currentAudioBuffer = null;
+
+        this.isUserScrolling = false;
+        this.scrollTimeout = null;
 
         const handleUserScroll = () => {
             this.isUserScrolling = true;
@@ -35,10 +51,6 @@ export class AudioEngine {
 
         window.addEventListener('wheel', handleUserScroll, {passive: true});
         window.addEventListener('touchmove', handleUserScroll, {passive: true});
-
-        this.player.addEventListener('play', () => this.startHighlightEngine());
-        this.player.addEventListener('pause', () => this.stopHighlightEngine());
-        this.player.addEventListener('ended', async () => await this.playNextChunk());
     }
 
     setupVisualizer(canvasElement) {
@@ -48,21 +60,10 @@ export class AudioEngine {
 
     startVisualizer() {
         if (!this.canvas) return;
-        if (!this.audioCtx) {
-            const AudioContextClass = window.AudioContext || window['webkitAudioContext'];
-            this.audioCtx = new AudioContextClass();
-            this.analyser = this.audioCtx.createAnalyser();
-            this.source = this.audioCtx.createMediaElementSource(this.player);
-            this.source.connect(this.analyser);
-            this.analyser.connect(this.audioCtx.destination);
-            this.analyser.fftSize = 128;
-            this.bufferLength = this.analyser.frequencyBinCount;
-            this.dataArray = new Uint8Array(this.bufferLength);
-            this.drawVisualizer();
-        }
         if (this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
         }
+        this.drawVisualizer();
     }
 
     drawVisualizer() {
@@ -82,6 +83,61 @@ export class AudioEngine {
             this.canvasCtx.fillRect(x, this.canvas.height - barHeight, barWidth, barHeight);
             x += barWidth + 1;
         }
+    }
+
+    async decodeBlob(blob) {
+        const arrayBuffer = await blob.arrayBuffer();
+        return await this.audioCtx.decodeAudioData(arrayBuffer);
+    }
+
+    getCurrentTime() {
+        if (!this.isPlaying) return this.pauseOffset;
+        return this.pauseOffset + (this.audioCtx.currentTime - this.playbackStartTime);
+    }
+
+    hasActiveBuffer() {
+        return this.currentAudioBuffer !== null;
+    }
+
+    pausePlayback() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        this.pauseOffset += (this.audioCtx.currentTime - this.playbackStartTime);
+        if (this.currentSource) {
+            this.currentSource.onended = null;
+            this.currentSource.stop();
+            this.currentSource.disconnect();
+            this.currentSource = null;
+        }
+        this.stopHighlightEngine();
+        if (this.onPlayStateChange) this.onPlayStateChange(false);
+    }
+
+    resumePlayback() {
+        if (this.isPlaying || !this.currentAudioBuffer) return;
+        this.isPlaying = true;
+        this.startVisualizer();
+        this.playBuffer(this.currentAudioBuffer, this.pauseOffset);
+        if (this.onPlayStateChange) this.onPlayStateChange(true);
+        this.startHighlightEngine();
+    }
+
+    playBuffer(buffer, offset = 0) {
+        this.currentSource = this.audioCtx.createBufferSource();
+        this.currentSource.buffer = buffer;
+        this.currentSource.connect(this.masterGain);
+
+        this.playbackStartTime = this.audioCtx.currentTime;
+        this.currentBufferDuration = buffer.duration;
+
+        this.currentSource.onended = () => {
+            if (this.isPlaying) {
+                this.pauseOffset = 0;
+                this.playNextChunk();
+            }
+        };
+
+        this.currentSource.start(0, offset);
     }
 
     initDB() {
@@ -158,7 +214,7 @@ export class AudioEngine {
         let targetIdx = this.queue.findIndex(q => q.spanIds.includes(spanId));
         if (targetIdx === -1) return;
 
-        this.player.pause();
+        this.pausePlayback();
         this.resetHighlighting();
 
         this.currentIndex = targetIdx;
@@ -174,8 +230,9 @@ export class AudioEngine {
         const targetIndex = Math.floor(percent * this.queue.length);
         const chunkIndex = Math.min(targetIndex, this.queue.length - 1);
 
-        this.player.pause();
+        this.pausePlayback();
         this.resetHighlighting();
+
         this.currentIndex = chunkIndex;
         this.targetSpanToSeek = null;
         this.isPlaying = true;
@@ -184,12 +241,26 @@ export class AudioEngine {
         await this.playNextChunk();
     }
 
+    stop() {
+        this.pausePlayback();
+        this.resetHighlighting();
+        this.pauseOffset = 0;
+        if (this.onPlaybackEnd) this.onPlaybackEnd();
+    }
+
+    hardReset() {
+        this.stop();
+        this.currentAudioBuffer = null;
+        this.queue = [];
+        this.currentIndex = 0;
+    }
+
     getGlobalProgress() {
         if (this.queue.length === 0) return 0;
-        const chunkContribution = this.currentIndex / this.queue.length;
+        const chunkContribution = Math.max(0, this.currentIndex - 1) / this.queue.length;
         let timeContribution = 0;
-        if (this.player.duration && !isNaN(this.player.duration)) {
-            timeContribution = (this.player.currentTime / this.player.duration) * (1 / this.queue.length);
+        if (this.currentBufferDuration > 0) {
+            timeContribution = (this.getCurrentTime() / this.currentBufferDuration) * (1 / this.queue.length);
         }
         return Math.min(1, chunkContribution + timeContribution);
     }
@@ -250,21 +321,19 @@ export class AudioEngine {
         await chunk.fetchPromise;
     }
 
-    async playNextChunk() {
-        this.startVisualizer();
-        if (this.currentIndex >= this.queue.length || !this.isPlaying) {
+    async playNextChunk(isResuming = false) {
+        if (!isResuming) this.startVisualizer();
+
+        if (this.currentIndex >= this.queue.length || (!this.isPlaying && !isResuming)) {
             const hasFinished = this.currentIndex >= this.queue.length;
             this.isPlaying = false;
-            this.player.pause();
+            this.pausePlayback();
             this.resetHighlighting();
             if (this.onPlaybackEnd) this.onPlaybackEnd();
             if (hasFinished) {
                 this.currentIndex = 0;
-                this.player.removeAttribute('src');
-                if (this.currentBlobUrl) {
-                    URL.revokeObjectURL(this.currentBlobUrl);
-                    this.currentBlobUrl = null;
-                }
+                this.currentAudioBuffer = null;
+                this.pauseOffset = 0;
             }
             return;
         }
@@ -290,38 +359,31 @@ export class AudioEngine {
                 return;
             }
 
-            if (this.currentBlobUrl) {
-                URL.revokeObjectURL(this.currentBlobUrl);
+            this.currentAudioBuffer = await this.decodeBlob(blob);
+
+            const durationMs = this.currentAudioBuffer.duration * 1000;
+            this.currentBoundaries = (chunk.apiBoundaries && chunk.apiBoundaries.length > 0)
+                ? this.alignBoundariesToMemoryMap(chunk.apiBoundaries, chunk.words, chunk.spanIds)
+                : this.generateAutomatedWeightedBoundaries(durationMs, chunk.words, chunk.spanIds);
+
+            let startOffset = 0;
+            if (this.targetSpanToSeek) {
+                const b = this.currentBoundaries.find(x => x.spanId === this.targetSpanToSeek);
+                startOffset = b ? b.startMs / 1000 : 0;
+                this.targetSpanToSeek = null;
             }
-            this.currentBlobUrl = URL.createObjectURL(blob);
 
-            this.player.src = this.currentBlobUrl;
-            this.player.load();
+            this.isPlaying = true;
+            this.pauseOffset = startOffset;
 
-            this.player.onloadedmetadata = () => {
-                const duration = this.player.duration * 1000;
-                this.currentBoundaries = (chunk.apiBoundaries && chunk.apiBoundaries.length > 0)
-                    ? this.alignBoundariesToMemoryMap(chunk.apiBoundaries, chunk.words, chunk.spanIds)
-                    : this.generateAutomatedWeightedBoundaries(duration, chunk.words, chunk.spanIds);
+            if (this.onPlayStateChange) this.onPlayStateChange(true);
 
-                if (this.targetSpanToSeek) {
-                    const b = this.currentBoundaries.find(x => x.spanId === this.targetSpanToSeek);
-                    this.player.currentTime = b ? b.startMs / 1000 : 0;
-                    this.targetSpanToSeek = null;
-                } else {
-                    this.player.currentTime = 0;
-                }
+            this.playBuffer(this.currentAudioBuffer, startOffset);
+            this.startHighlightEngine();
 
-                const playPromise = this.player.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(() => {
-                    });
-                }
+            this.currentIndex++;
+            this.preloadBuffer().catch(() => {});
 
-                this.currentIndex++;
-                this.preloadBuffer().catch(() => {
-                });
-            };
         } catch (e) {
             this.currentIndex++;
             setTimeout(() => this.playNextChunk(), 50);
@@ -337,19 +399,15 @@ export class AudioEngine {
     }
 
     stop() {
-        this.isPlaying = false;
-        this.player.pause();
+        this.pausePlayback();
         this.resetHighlighting();
+        this.pauseOffset = 0;
         if (this.onPlaybackEnd) this.onPlaybackEnd();
     }
 
     hardReset() {
         this.stop();
-        this.player.removeAttribute('src');
-        if (this.currentBlobUrl) {
-            URL.revokeObjectURL(this.currentBlobUrl);
-            this.currentBlobUrl = null;
-        }
+        this.currentAudioBuffer = null;
         this.queue = [];
         this.currentIndex = 0;
     }
@@ -397,8 +455,8 @@ export class AudioEngine {
 
     startHighlightEngine() {
         const sync = () => {
-            if (this.player.paused || this.player.ended) return;
-            const time = this.player.currentTime * 1000;
+            if (!this.isPlaying) return;
+            const time = this.getCurrentTime() * 1000;
             const active = this.currentBoundaries.find(b => time >= b.startMs && time <= b.endMs);
             if (active && active.spanId !== this.currentActiveSpanId) {
                 if (this.currentActiveSpanId) {

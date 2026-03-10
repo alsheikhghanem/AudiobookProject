@@ -34,7 +34,7 @@ const elements = {
 
 const api = new ApiService(API_BASE_URL);
 const textProcessor = new TextProcessor();
-const audioEngine = new AudioEngine(elements.audioPlayer, api);
+const audioEngine = new AudioEngine(api);
 let currentChunks = [];
 let progressTrackerId = null;
 
@@ -170,19 +170,19 @@ audioEngine.onPlaybackEnd = () => {
     if (progressTrackerId) cancelAnimationFrame(progressTrackerId);
 };
 
-elements.audioPlayer.addEventListener('play', () => {
-    elements.wrapperLoading.classList.add('hidden');
-    elements.wrapperPlay.classList.add('hidden');
-    elements.wrapperPause.classList.remove('hidden');
-    elements.btnMainPlay.style.backgroundColor = '#ef4444';
-});
-
-elements.audioPlayer.addEventListener('pause', () => {
-    elements.wrapperPause.classList.add('hidden');
-    elements.wrapperLoading.classList.add('hidden');
-    elements.wrapperPlay.classList.remove('hidden');
-    elements.btnMainPlay.style.backgroundColor = '#c15f3c';
-});
+audioEngine.onPlayStateChange = (isPlaying) => {
+    if (isPlaying) {
+        elements.wrapperLoading.classList.add('hidden');
+        elements.wrapperPlay.classList.add('hidden');
+        elements.wrapperPause.classList.remove('hidden');
+        elements.btnMainPlay.style.backgroundColor = '#ef4444';
+    } else {
+        elements.wrapperPause.classList.add('hidden');
+        elements.wrapperLoading.classList.add('hidden');
+        elements.wrapperPlay.classList.remove('hidden');
+        elements.btnMainPlay.style.backgroundColor = '#c15f3c';
+    }
+};
 
 function checkInputState() {
     const ok = elements.textInput.value.trim().length > 0 && elements.voiceSelect.value;
@@ -249,12 +249,10 @@ elements.btnMainPlay.onclick = async () => {
 
     if (audioEngine.queue.length > 0) {
         if (audioEngine.isPlaying) {
-            audioEngine.isPlaying = false;
-            elements.audioPlayer.pause();
+            audioEngine.pausePlayback();
         } else {
-            audioEngine.isPlaying = true;
-            if (elements.audioPlayer.getAttribute('src')) {
-                elements.audioPlayer.play();
+            if (audioEngine.hasActiveBuffer()) {
+                audioEngine.resumePlayback();
                 trackProgress();
             } else {
                 if (audioEngine.onPlaybackStart) audioEngine.onPlaybackStart();
