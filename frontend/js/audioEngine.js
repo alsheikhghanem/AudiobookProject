@@ -485,24 +485,35 @@ export class AudioEngine {
     }
 
     startHighlightEngine() {
+        const highlighter = document.getElementById('floating-highlighter');
+
         const sync = () => {
             if (!this.isPlaying) return;
             const time = this.getCurrentTime() * 1000;
             const active = this.currentBoundaries.find(b => time >= b.startMs && time <= b.endMs);
+
             if (active && active.spanId !== this.currentActiveSpanId) {
                 if (this.currentActiveSpanId) {
                     const old = document.getElementById(this.currentActiveSpanId);
-                    if (old) old.className = old.getAttribute('data-original-class');
+                    if (old) old.classList.remove('word-active');
                 }
                 const el = document.getElementById(active.spanId);
-                if (el) {
-                    el.className = "word-glow transition-all duration-200 ease-out inline-block";
-                    if (!this.isUserScrolling && this.scrollContainer) {
-                        const containerRect = this.scrollContainer.getBoundingClientRect();
-                        const elRect = el.getBoundingClientRect();
-                        const relativeTop = (elRect.top - containerRect.top) + this.scrollContainer.scrollTop;
-                        const targetPosition = relativeTop - (containerRect.height * 0.4);
+                if (el && highlighter && this.scrollContainer) {
+                    el.classList.add('word-active');
 
+                    const elRect = el.getBoundingClientRect();
+                    const containerRect = this.scrollContainer.getBoundingClientRect();
+
+                    const top = elRect.top - containerRect.top + this.scrollContainer.scrollTop;
+                    const left = elRect.left - containerRect.left + this.scrollContainer.scrollLeft;
+
+                    highlighter.style.opacity = '1';
+                    highlighter.style.width = `${elRect.width + 8}px`;
+                    highlighter.style.height = `${elRect.height + 4}px`;
+                    highlighter.style.transform = `translate3d(${left - 4}px, ${top - 2}px, 0)`;
+
+                    if (!this.isUserScrolling) {
+                        const targetPosition = top - (containerRect.height * 0.4);
                         if (Math.abs(this.camera.targetY - targetPosition) > 60) {
                             this.camera.targetY = Math.max(0, targetPosition);
                         }
@@ -510,6 +521,7 @@ export class AudioEngine {
                 }
                 this.currentActiveSpanId = active.spanId;
             }
+
             this.animationFrameId = requestAnimationFrame(sync);
         };
         this.animationFrameId = requestAnimationFrame(sync);
@@ -521,9 +533,12 @@ export class AudioEngine {
 
     resetHighlighting() {
         this.stopHighlightEngine();
+        const highlighter = document.getElementById('floating-highlighter');
+        if (highlighter) highlighter.style.opacity = '0';
+
         if (this.currentActiveSpanId) {
             const el = document.getElementById(this.currentActiveSpanId);
-            if (el) el.className = el.getAttribute('data-original-class');
+            if (el) el.classList.remove('word-active');
         }
         this.currentActiveSpanId = null;
     }
