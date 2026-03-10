@@ -22,6 +22,6 @@ if %errorlevel% neq 0 (
 
 :: Run the project
 echo [SUCCESS] Environment ready. Launching LexiCast...
-python run_project.py
+python runner.py
 
 pause
