@@ -170,19 +170,19 @@ audioEngine.onPlaybackEnd = () => {
     if (progressTrackerId) cancelAnimationFrame(progressTrackerId);
 };
 
-elements.audioPlayer.addEventListener('play', () => {
+audioEngine.onPlay = () => {
     elements.wrapperLoading.classList.add('hidden');
     elements.wrapperPlay.classList.add('hidden');
     elements.wrapperPause.classList.remove('hidden');
     elements.btnMainPlay.style.backgroundColor = '#ef4444';
-});
+};
 
-elements.audioPlayer.addEventListener('pause', () => {
+audioEngine.onPause = () => {
     elements.wrapperPause.classList.add('hidden');
     elements.wrapperLoading.classList.add('hidden');
     elements.wrapperPlay.classList.remove('hidden');
     elements.btnMainPlay.style.backgroundColor = '#c15f3c';
-});
+};
 
 function checkInputState() {
     const ok = elements.textInput.value.trim().length > 0 && elements.voiceSelect.value;
@@ -249,17 +249,10 @@ elements.btnMainPlay.onclick = async () => {
 
     if (audioEngine.queue.length > 0) {
         if (audioEngine.isPlaying) {
-            audioEngine.isPlaying = false;
-            elements.audioPlayer.pause();
+            audioEngine.pause();
         } else {
-            audioEngine.isPlaying = true;
-            if (elements.audioPlayer.getAttribute('src')) {
-                elements.audioPlayer.play();
-                trackProgress();
-            } else {
-                if (audioEngine.onPlaybackStart) audioEngine.onPlaybackStart();
-                await audioEngine.playNextChunk();
-            }
+            audioEngine.resume();
+            trackProgress();
         }
         return;
     }
